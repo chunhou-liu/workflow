@@ -1,33 +1,51 @@
 # -*- coding: utf-8 -*-
+import sys
 from datetime import datetime
 import numpy as np
-from sklearn import tree
+from sklearn import tree, linear_model
 from datasets.mnist import mnist
 
 
-class CARTree(object):
-    def __init__(self, max_depth):
-        self.clf = tree.DecisionTreeClassifier(max_depth=max_depth)
-
-    def train(self):
-        self.clf.fit(mnist.train.images, mnist.train.labels)
-
-    def test(self):
-        return np.sum(self.clf.predict(mnist.test.images) == mnist.test.labels) / len(mnist.test.labels)
+def log(*args, **kwargs):
+    print(*args, **kwargs)
+    with open("tree-log.txt", "a") as f:
+        print(*args, **kwargs, file=f)
 
 
-if __name__ == "__main__":
-    depth = list(range(10, 110, 10))
-    y = []
-    for max_depth in depth:
-        cart = CARTree(max_depth)
-        start = datetime.now()
-        cart.train()
-        end = datetime.now()
-        print(max_depth, (end-start).total_seconds(), sep='\t')
-        y.append((end-start).total_seconds())
-    with open("tree-log.txt", "w") as f:
-        print(depth, file=f)
-        print(y, file=f)
-    print(depth)
-    print(y)
+def cartree_classifier(max_depth):
+    clf = tree.DecisionTreeClassifier(max_depth=max_depth)
+    start = datetime.now()
+    clf.fit(mnist.train.images, mnist.train.labels)
+    end = datetime.now()
+    return clf, (end-start).total_seconds()
+
+
+def regression(x, y):
+    x = np.array(x).reshape(-1, 1)
+    y = np.array(y)
+    reg = linear_model.LinearRegression()
+    reg.fit(x, y)
+    log(reg.coef_, reg.intercept_)
+    return reg
+
+
+assert(all([i.isdigit() for i in sys.argv[1:]]))
+train_depth = [int(i) for i in sys.argv[1:-3]]
+train_times = []
+for max_depth in train_depth:
+    model, train_time = cartree_classifier(max_depth)
+    train_times.append(train_time)
+    acc = np.sum(model.predict(mnist.test.images) == mnist.test.labels) / len(mnist.test.labels)
+    log(max_depth, train_time, acc, sep='\t')
+log(train_depth)
+log(train_times)
+log('$'*50)
+
+reg = regression(train_depth, train_times)
+test_depth = [int(i) for i in sys.argv[-3:]]
+for max_depth in test_depth:
+    model, train_time = cartree_classifier(max_depth)
+    train_times.append(train_time)
+    acc = np.sum(model.predict(mnist.test.images) == mnist.test.labels) / len(mnist.test.labels)
+    log(max_depth, "prediction time:", reg.predict(max_depth), "real time: ", train_time, acc, sep='\t')
+log('@'*50)

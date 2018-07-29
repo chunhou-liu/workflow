@@ -27,7 +27,7 @@ def regression(x, y):
     model = linear_model.LinearRegression()
     model.fit(x, y)
     log("model coef:", model.coef_, "model intercept:", model.intercept_, sep='\t')
-    return model.coef_[0], model.intercept_
+    return model
 
 
 assert(all([i.isdigit() for i in sys.argv[1:]]))
@@ -47,7 +47,7 @@ log(sample_numbers)
 log(train_times)
 log("+"*50)
 
-coef, intercept = regression(sample_numbers, train_times)
+model = regression(sample_numbers, train_times)
 
 test_sample_numbers = [int(i) for i in sys.argv[-3:]]
 
@@ -55,6 +55,6 @@ for sample_num in test_sample_numbers:
     x, y = resample(mnist.train.images, mnist.train.labels, replace=False, n_samples=sample_num)
     model, train_time = svm_classifier(x, y)
     acc = np.sum(model.predict(mnist.test.images) == mnist.test.labels) / len(mnist.test.labels)
-    log("prediction time:",coef*sample_num**2 + intercept, "real time:", train_time, "acc:", acc, sep='\t')
+    log("prediction time:",model.predict(sample_num**2), "real time:", train_time, "acc:", acc, sep='\t')
 
 log("="*50)

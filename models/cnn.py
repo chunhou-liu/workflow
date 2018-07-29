@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
+import argparse
+from datetime import datetime
+from sklearn import linear_model
 import tensorflow as tf
+from datasets.mnist import mnist
 
 
 class CNNNetwork(object):
@@ -44,27 +48,64 @@ class CNNNetwork(object):
     def train(self, mnist, train_steps=10000, batch_size=100):
         initializer = tf.global_variables_initializer()
         self.session.run(initializer)
+        start = datetime.now()
         for i in range(train_steps):
             batch_x, batch_y = mnist.train.next_batch(batch_size)
             self.session.run(self.train_step, feed_dict={self.x: batch_x, self.y: batch_y})
+        end = datetime.now()
+        return (end-start).total_seconds()
 
     def test(self, test_x, test_y):
         return self.session.run(self.accuracy, feed_dict={self.x: test_x, self.y: test_y})
 
 
-if __name__ == "__main__":
-    from datetime import datetime
-    from datasets.mnist import mnist
-    cout1s = [6, 16, 32, 64, 120]
-    cout2s = [32, 64, 120]
-    for c1 in cout1s:
-        for c2 in cout2s:
-            param = (c1, c2)
-            cnn = CNNNetwork(*param)
-            start = datetime.now()
-            cnn.train(mnist, train_steps=2000, batch_size=100)
-            end = datetime.now()
-            acc = cnn.test(mnist.test.images, mnist.test.labels)
-            with open("cnn-log.txt", "a") as f:
-                print(param, cnn.X, (end-start).total_seconds(), acc, sep='\t', file=f)
-            print(param, cnn.X, (end - start).total_seconds(), acc, sep='\t')
+def log(*args, **kwargs):
+    print(*args, **kwargs)
+    with open("cnn-log.txt", "a") as f:
+        print(*args, **kwargs, file=f)
+
+
+def regression(x, y):
+    reg = linear_model.LinearRegression()
+    reg.fit(x, y)
+    log(reg.coef_, reg.intercept_)
+    return reg
+
+
+def test_params(s):
+    try:
+        return tuple(map(int, s[1:-1].split(",")))
+    except:
+        raise argparse.ArgumentTypeError("must be a tuple of integers")
+
+parser = argparse.ArgumentParser()
+parser.add_argument("-c1", "--conv1", nargs="+", default=[32, 64], type=int, help="conv1 layer nodes")
+parser.add_argument("-c2", "--conv2", nargs="+", default=[32, 64], type=int, help="conv2 layer nodes")
+parser.add_argument("-t", "--test", nargs="+", default=[(32, 64)], type=test_params, help="test conv1 and conv2 combination")
+args = parser.parse_args()
+
+cout1s = args.conv1
+cout2s = args.conv2
+x = []
+train_times = []
+for c1 in cout1s:
+    for c2 in cout2s:
+        param = (c1, c2)
+        cnn = CNNNetwork(*param)
+        train_time = cnn.train(mnist, train_steps=2000, batch_size=100)
+        acc = cnn.test(mnist.test.images, mnist.test.labels)
+        x.append(cnn.X)
+        train_times.append(train_time)
+        log(param, cnn.X, train_time, acc, sep='\t')
+
+log(x)
+log(train_times)
+log("#"*50)
+
+model = regression(x, train_times)
+for param in args.test:
+    cnn = CNNNetwork(*param)
+    train_time = cnn.train(mnist, train_steps=2000, batch_size=100)
+    acc = cnn.test(mnist.test.images, mnist.test.labels)
+    log(param, cnn.X, "predict time:", model.predict(cnn.X), "real time:",train_time, acc, sep='\t')
+log("&*")
