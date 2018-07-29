@@ -74,7 +74,7 @@ def regression(x, y):
 
 def test_params(s):
     try:
-        return tuple(map(int, s[1:-1].split(",")))
+        return tuple(map(int, s.split(",")))
     except:
         raise argparse.ArgumentTypeError("must be a tuple of integers")
 
