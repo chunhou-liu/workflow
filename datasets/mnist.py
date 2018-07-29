@@ -4,4 +4,5 @@ from tensorflow.examples.tutorials.mnist import input_data
 
 
 _BASE_DIR = os.path.dirname(__file__)
-mnist = input_data.read_data_sets(os.path.join(_BASE_DIR, "mnist/"), one_hot=False)
+def mnist(one_hot=False):
+    return input_data.read_data_sets(os.path.join(_BASE_DIR, "mnist/"), one_hot=one_hot)

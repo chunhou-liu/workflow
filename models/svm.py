@@ -29,7 +29,7 @@ def regression(x, y):
     log("model coef:", model.coef_, "model intercept:", model.intercept_, sep='\t')
     return model
 
-
+"""
 assert(all([i.isdigit() for i in sys.argv[1:]]))
 
 sample_numbers = [int(i) for i in sys.argv[1:-3]]
@@ -58,3 +58,4 @@ for sample_num in test_sample_numbers:
     log("prediction time:",model.predict(sample_num**2), "real time:", train_time, "acc:", acc, sep='\t')
 
 log("="*50)
+"""

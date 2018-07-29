@@ -28,7 +28,7 @@ def regression(x, y):
     log(reg.coef_, reg.intercept_)
     return reg
 
-
+"""
 assert(all([i.isdigit() for i in sys.argv[1:]]))
 train_depth = [int(i) for i in sys.argv[1:-3]]
 train_times = []
@@ -49,3 +49,4 @@ for max_depth in test_depth:
     acc = np.sum(model.predict(mnist.test.images) == mnist.test.labels) / len(mnist.test.labels)
     log(max_depth, "prediction time:", reg.predict(max_depth), "real time: ", train_time, acc, sep='\t')
 log('@'*50)
+"""
