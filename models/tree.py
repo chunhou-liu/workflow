@@ -3,13 +3,16 @@ import argparse
 from datetime import datetime
 import numpy as np
 from sklearn import tree, linear_model
-from datasets.mnist import mnist
+from datasets.mnist import mnist as MNIST
+
+
+mnist = MNIST(False)
 
 
 def log(*args, **kwargs):
-    print(*args, **kwargs)
+    print(*args, **kwargs, sep='\t')
     with open("tree-log.txt", "a") as f:
-        print(*args, **kwargs, file=f)
+        print(*args, **kwargs, file=f, sep='\t')
 
 
 def cartree_classifier(max_depth):
@@ -17,7 +20,8 @@ def cartree_classifier(max_depth):
     start = datetime.now()
     clf.fit(mnist.train.images, mnist.train.labels)
     end = datetime.now()
-    return clf, (end-start).total_seconds()
+    acc = np.sum(clf.predict(mnist.test.images) == mnist.test.labels) / len(mnist.test.labels)
+    return (end-start).total_seconds(), acc
 
 
 def regression(x, y):
@@ -28,25 +32,30 @@ def regression(x, y):
     log(reg.coef_, reg.intercept_)
     return reg
 
-"""
-assert(all([i.isdigit() for i in sys.argv[1:]]))
-train_depth = [int(i) for i in sys.argv[1:-3]]
-train_times = []
-for max_depth in train_depth:
-    model, train_time = cartree_classifier(max_depth)
-    train_times.append(train_time)
-    acc = np.sum(model.predict(mnist.test.images) == mnist.test.labels) / len(mnist.test.labels)
-    log(max_depth, train_time, acc, sep='\t')
-log(train_depth)
-log(train_times)
-log('$'*50)
 
-reg = regression(train_depth, train_times)
-test_depth = [int(i) for i in sys.argv[-3:]]
-for max_depth in test_depth:
-    model, train_time = cartree_classifier(max_depth)
-    train_times.append(train_time)
-    acc = np.sum(model.predict(mnist.test.images) == mnist.test.labels) / len(mnist.test.labels)
-    log(max_depth, "prediction time:", reg.predict(max_depth), "real time: ", train_time, acc, sep='\t')
-log('@'*50)
-"""
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--depth", nargs="+", type=int, default=[10, 20, 30, 40, 70, 100, 150, 200, 500, 1000])
+    parser.add_argument("--mark", action="store_true")
+    parser.add_argument("--predict", nargs="+", type=int, default=[45, 60, 300, 700])
+    args = parser.parse_args()
+    if args.mark:
+        train_times = []
+        for max_depth in args.depth:
+            train_time, acc = cartree_classifier(max_depth)
+            train_times.append(train_time)
+            log(max_depth, train_time, acc)
+        log('$'*50)
+        model = regression(args.depth, train_times)
+        for max_depth in args.predict:
+            train_time, acc = cartree_classifier(max_depth)
+            train_times.append(train_time)
+            log(max_depth, model.predict(max_depth), train_time, acc)
+    else:
+        for max_depth in args.predict:
+            train_time, acc = cartree_classifier(max_depth)
+            log(max_depth, train_time, acc)
+    log("="*50)
+
+
+# python -m models.tree --mark

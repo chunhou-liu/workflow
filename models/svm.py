@@ -52,13 +52,11 @@ if __name__ == "__main__":
         for sample_num in args.predict:
             x, y = resample(mnist.train.images, mnist.train.labels, replace=False, n_samples=sample_num)
             train_time, acc = svm_classifier(x, y)
-            train_times.append(train_time)
             log(sample_num, model.predict(sample_num**2), train_time, acc)
     else:
         for sample_num in args.predict:
             x, y = resample(mnist.train.images, mnist.train.labels, replace=False, n_samples=sample_num)
             train_time, acc = svm_classifier(x, y)
-            train_times.append(train_time)
             log(sample_num, train_time, acc)
     log("#"*50)
 
