@@ -1,93 +1,51 @@
 # -*- coding: utf-8 -*-
 import argparse
 from datetime import datetime
-import numpy as np
-import tensorflow as tf
-from sklearn import linear_model
-from datasets.mnist import mnist as MNIST
+from keras.models import Sequential
+from keras.layers import Conv2D, MaxPool2D, Dense, Flatten
+from keras.datasets import mnist
+from keras.utils import np_utils
+
+(X_train, y_train), (X_test, y_test) = mnist.load_data("D:\\workspace\\workflow\\models\\mnist.npz")
+# reshape to be [samples][pixels][width][height]
+X_train = X_train.reshape(X_train.shape[0], 28, 28, 1).astype('float32')
+X_test = X_test.reshape(X_test.shape[0], 28, 28, 1).astype('float32')
+# normalize inputs from 0-255 to 0-1
+X_train = X_train / 255
+X_test = X_test / 255
+# one hot encode outputs
+y_train = np_utils.to_categorical(y_train)
+y_test = np_utils.to_categorical(y_test)
 
 
-mnist = MNIST(True)
+def cnn_param(s):
+    try:
+        return (int(i) for i in s.split(","))
+    except argparse.ArgumentTypeError:
+        raise
 
+parser = argparse.ArgumentParser()
+parser.add_argument("--units", type=cnn_param, nargs="+")
+args = parser.parse_args()
 
-def _weight_variable(shape):
-    return tf.Variable(tf.random_normal(shape, stddev=0.1))
+def build_model(out1, out2):
+    X = 0
+    model = Sequential()
+    model.add(Conv2D(out1, kernel_size=(5,5), padding="same", input_shape=(28, 28, 1), activation="relu"))
+    X += model.output_shape[1]**2*out1*1*25
+    model.add(MaxPool2D())
+    model.add(Conv2D(out2, kernel_size=(5,5), padding="same", activation="relu"))
+    X += model.output_shape[1]**2*out2*out1*25
+    model.add(MaxPool2D())
+    model.add(Flatten())
+    model.add(Dense(120, activation="relu"))
+    model.add(Dense(10, activation="softmax"))
+    model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+    return model, X
 
-
-def _bias_variable(shape):
-    return tf.Variable(tf.constant(0.1, shape=shape))
-
-
-def _bp_network(units: int):
-    x = tf.placeholder(dtype=tf.float32, shape=(None, 784))
-    y = tf.placeholder(dtype=tf.int64, shape=(None, 10))
-    weight = _weight_variable([784, units])
-    bias = _bias_variable([units])
-    hide = tf.sigmoid(tf.matmul(x, weight) + bias)
-    weight = _weight_variable([units, 10])
-    bias = _bias_variable([10])
-    output = tf.nn.softmax(tf.matmul(hide, weight) + bias)
-    loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=y, logits=output))
-    train = tf.train.GradientDescentOptimizer(0.5).minimize(loss)
-    accuracy = tf.equal (tf.argmax (y, 1), tf.argmax (output, 1))
-    accuracy = tf.reduce_mean(tf.cast(accuracy, tf.float32))
-    return x, y, train, accuracy
-
-
-def bp_classifier(units, train_steps=10000, batch_size=100):
-    x, y, train, accuracy = _bp_network(units)
-    sess = tf.Session()
-    sess.run(tf.global_variables_initializer())
+for out1, out2 in args.units:
+    model, X = build_model(out1, out2)
     start = datetime.now()
-    for i in range(train_steps):
-        batch_x, batch_y  = mnist.train.next_batch(batch_size)
-        sess.run(train, feed_dict={x: batch_x, y: batch_y})
+    model.fit(x=X_train, y=y_train, validation_data=(X_test, y_test), epochs=2, batch_size=100)
     end = datetime.now()
-    acc = sess.run(accuracy, feed_dict={x: mnist.test.images, y: mnist.test.labels})
-    return (end-start).total_seconds(), acc
-
-
-def log(*args, **kwargs):
-    print(*args, **kwargs, sep='\t')
-    with open("bp-log.txt", "a") as f:
-        print(*args, **kwargs, file=f, sep='\t')
-
-
-def regression(x, y):
-    x = np.array(x).reshape(-1, 1)
-    y = np.array(y)
-    reg = linear_model.LinearRegression()
-    reg.fit(x, y)
-    log(reg.coef_, reg.intercept_)
-    return reg
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--nodes", nargs="+", type=int, default=[100])
-    parser.add_argument("--train_steps", type=int, default=10000)
-    parser.add_argument("--batch_size", type=int, default=100)
-    parser.add_argument("--predict", type=int, nargs="+", default=[300])
-    parser.add_argument("--mark", action="store_true")
-    args = parser.parse_args()
-    if args.mark:
-        log("units", "train time", "acc")
-        train_times = []
-        for unit in args.nodes:
-            train_time, acc = bp_classifier(unit, train_steps=args.train_steps, batch_size=args.batch_size)
-            log(unit, train_time, acc)
-            train_times.append(train_time)
-        log("%"*50)
-        model = regression(args.nodes, train_times)
-        log("units", "train time", "pred time", "acc")
-        for unit in args.predict:
-            train_time, acc = bp_classifier(unit, train_steps=args.train_steps, batch_size=args.batch_size)
-            log(unit, train_time, model.predict(unit), acc)
-    else:
-        log("units", "train time", "acc")
-        for unit in args.predict:
-            train_time, acc = bp_classifier(unit, train_steps=args.train_steps, batch_size=args.batch_size)
-            log(unit, train_time,acc)
-    log("#"*50)
-
-# python -m models.bp --nodes 50 100 200 300 400 500 800 1000 1300 1500 1800 2000 --train_steps 10000 --predict 600 2200 --mark
+    print(X, (end-start).total_seconds())
