@@ -45,7 +45,7 @@ if __name__ == "__main__":
     x = mnist.train.images
     y = mnist.train.labels
     x = x.reshape(x.shape[0], 28, 28, 1)
-    for param in args.param:
+    for param in args.params:
         lenet = LeNet(*param)
         start = datetime.now()
         lenet.train(x, y)
