@@ -71,6 +71,7 @@ def deadline_constraint(costs, prices, deadline):
         packages[color].sort(key=operator.attrgetter("left_volume"))
 
     return dict([(color, [[index_mapping[ind] for ind, cost in case.objects] for case in cases]) for color, cases in packages.items()])
+        
 
 
 if __name__ == "__main__":
