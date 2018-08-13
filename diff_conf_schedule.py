@@ -41,7 +41,8 @@ def deadline_constraint(costs, prices, deadline):
         return sum(task) / len(task)
 
     def calculate_price_performance_ratio(tasks, prices):
-        return [[cost/price for cost, price in zip(task, prices)] for task in tasks]
+        return [[1/(cost*price) for cost, price in zip(task, prices)] for task in tasks]
+        #return [[cost/price for cost, price in zip(task, prices)] for task in tasks]
 
     def coloring_object(cp_ratio, prices):
         max_ratio, min_price, color = min(cp_ratio), max(prices), -1
