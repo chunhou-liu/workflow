@@ -72,7 +72,6 @@ def deadline_constraint(costs, prices, deadline):
         packages[color].sort(key=operator.attrgetter("left_volume"))
 
     return dict([(color, [[index_mapping[ind] for ind, cost in case.objects] for case in cases]) for color, cases in packages.items()])
-        
 
 
 if __name__ == "__main__":
@@ -91,7 +90,7 @@ if __name__ == "__main__":
     prices = [
         4,5,6,10,6
     ]
-    deployment = deadline_constraint(costs, prices, 100)
+    deployment = deadline_constraint(costs, prices, 6)
     for machine_type in deployment:
         print("machine type",machine_type, "price", prices[machine_type])
         for ind, machine in enumerate(deployment[machine_type], start=1):

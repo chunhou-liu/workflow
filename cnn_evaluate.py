@@ -2,6 +2,8 @@
 import numpy as np
 from datetime import datetime
 import tensorflow as tf
+from keras.models import Sequential
+from keras.layers import Dense
 
 
 def evaluate_cnn(M, K, Cin, Cout):
@@ -35,7 +37,6 @@ def evaluate_dense(units, features):
     return (end-start).total_seconds() / 1000
 
 
-    
 """
 if __name__ == "__main__":
     import operator
@@ -58,6 +59,7 @@ if __name__ == "__main__":
     plt.plot([i[1] for i in data], [i[0] for i in data])
     plt.show()
 """
+
 
 if __name__ == "__main__":
     import operator

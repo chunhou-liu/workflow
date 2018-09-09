@@ -27,7 +27,7 @@ class LeNet(object):
     
     def train(self, x, y):
         start = datetime.now()
-        self.model.fit(x, y, epochs=1)
+        self.model.fit(x, y, epochs=10)
         end = datetime.now()
         return (end-start).total_seconds()
 
